@@ -3,7 +3,6 @@ import os
 import numpy as np
 
 import nd2
-from nis2pyr.reader import read_nd2file
 
 from careamics.lvae_training.dataset import DataSplitType
 from careamics.lvae_training.dataset.utils.data_utils import get_datasplit_tuples
@@ -53,19 +52,10 @@ def get_raw_files_dict():
     return files_dict
 
 
-def load_7D(fpath):
-    print(f"Loading from {fpath}")
-    with nd2.ND2File(fpath) as nd2file:
-        # Stdout: ND2 dimensions: {'P': 20, 'C': 19, 'Y': 1608, 'X': 1608}; RGB: False; datatype: uint16; legacy: False
-        data = read_nd2file(nd2file)
-    return data
-
-
 def load_one_fpath(fpath, channel_list):
-    data = load_7D(fpath)
-    # old_dataset.shape: (1, 20, 1, 19, 1608, 1608, 1)
-    data = data[0, :, 0, :, :, :, 0]
-    # old_dataset.shape: (20, 19, 1608, 1608)
+    with nd2.ND2File(fpath) as nd2file:
+        # axes = "".join(nd2_file.sizes.keys())  # PCYX [4 of possible 7 "TPZCYXS"]
+        data = nd2file.asarray()                 # shape: (20, 19, 1608, 1608)
     # Here, 20 are different locations and 19 are different channels.
     data = data[:, channel_list, ...]
     # swap the second and fourth axis
@@ -77,7 +67,7 @@ def load_one_fpath(fpath, channel_list):
     elif fname_prefix == "uSplit_14022025":
         data = np.delete(data, [17, 19], axis=0)
 
-    # old_dataset.shape: (20, 1608, 1608, C)
+    # shape: (20, 1608, 1608, C)
     return data
 
 

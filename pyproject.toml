@@ -41,7 +41,6 @@ classifiers = [
 dependencies = [
     "careamics[examples, wandb]>=0.0.8",
     "imagecodecs<=2024.9.22",
-    "nis2pyr",
     "nd2",
     "czifile",
     "nd2reader",
