@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 
@@ -6,30 +7,39 @@ import tifffile
 
 from careamics.lvae_training.dataset import DataSplitType
 from careamics.lvae_training.dataset.utils.data_utils import get_datasplit_tuples
+from careamics.dataset.dataset_utils.dataset_utils import reshape_array
 
 
 def load_one_file(fpath):
     data = tifffile.imread(fpath)
+    if len(data.shape) == 2:
+        axes = 'YX'
+    elif len(data.shape) == 3:
+        axes = 'SYX' 
+    elif len(data.shape) == 4:
+        axes = 'STYX'
+    else: 
+        raise ValueError(f"Invalid data shape: {data.shape}")
+    data = reshape_array(data, axes)
+    data = data.reshape(-1, data.shape[-2], data.shape[-1])
     return data
 
 
-def load_data(datadir, ch1_scale=1, ch2_scale=6):
-    channels_list = os.listdir(datadir)
-    data_list = []
-    for i, path in enumerate(channels_list):
-        ch_scale = ch1_scale if i == 0 else ch2_scale
-        ch_data = []
-        ch_path = os.path.join(datadir, path)
-        files = os.listdir(ch_path)
-        for file in files:
-            fpath = os.path.join(ch_path, file)
-            data = load_one_file(fpath)
-            ch_data.append(data)
-        ch_data = np.stack(ch_data, axis=0)
-        data_list.append(ch_data / ch_scale)
+def load_data(datadir):
+    data_path = Path(datadir)
+
+    channel_dirs = sorted(p for p in data_path.iterdir() if p.is_dir())
+    channels_data = []
+
+    for channel_dir in channel_dirs:
+        image_files = sorted(f for f in channel_dir.iterdir() if f.is_file())
+        channel_images = [load_one_file(image_path) for image_path in image_files]
+            
+        channel_stack = np.concatenate(channel_images, axis=0)
+        channels_data.append(channel_stack)
     
-    data = np.stack(data_list, axis=-1)
-    return data
+    final_data = np.stack(channels_data, axis=-1)
+    return final_data
 
 
 def get_train_val_data(
