@@ -34,7 +34,7 @@ def get_data_configs(
         use_one_mu_std=True,
         train_aug_rotate=True,
         target_separate_normalization=True,
-        input_is_sum=False,
+        input_is_sum=True,
         padding_kwargs={"mode": "reflect"},
         overlapping_padding_kwargs={"mode": "reflect"},
         start_alpha=[0.1] * num_channels,
