@@ -7,10 +7,13 @@ from careamics.lvae_training.dataset import DatasetConfig, DataType, DataSplitTy
 from careamics.lvae_training.dataset import (
     LCMultiChDloader,
     MultiChDloader,
-    MultiChDloaderRef,
+    # MultiChDloaderRef,
     MultiFileDset,
     MultiCropDset
 )
+
+from .HT_H23B import MultiChDloaderRef
+
 
 SplittingDataset = Union[LCMultiChDloader, MultiChDloader, MultiFileDset, MultiCropDset]
 

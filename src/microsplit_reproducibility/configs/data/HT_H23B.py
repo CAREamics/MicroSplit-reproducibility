@@ -39,6 +39,7 @@ def get_data_configs(test_frame_idx=8) -> tuple[HTH23BConfig, HTH23BConfig, HTH2
         update=dict(
             datasplit_type=DataSplitType.Test,
             test_frame_idx=test_frame_idx,
+            uncorrelated_channels=False,  # Test data is already channel-mixed
         )
     )
     return train_data_config, val_data_config, test_data_config
