@@ -6,6 +6,16 @@
 [![Image.sc](https://img.shields.io/badge/Got%20a%20question%3F-Image.sc-blue)](https://forum.image.sc/)
 
 
+> [!IMPORTANT]
+> This repository is used to reproduce the results fron the [paper](https://www.nature.com/articles/s41592-026-03082-1), it leverages the version of [CAREamics](https://careamics.github.io/latest/) used at the time of the work. We are currently refactoring the code:
+> - Compatibility with the more recent CAREamics version
+> - Better usability, simpler configuration
+> - All in CAREamics, no extra repository
+>
+> Stay tune for the CAREamics MicroSplit release!
+
+
+
 ## What is MicroSplit
 
 MicroSplit is a deep learning-based computational multiplexing technique that enhances
@@ -159,6 +169,23 @@ The notebooks were tested on multiple systems including Linux, Mac and Windows; 
 - [HHMI-D25-8bit](https://download.fht.org/jug/msplit/hhmi_d25/hhmid25_8bit.zip)
 - [HHMI-D25-16bit](https://download.fht.org/jug/msplit/hhmi_d25/hhmi_d25_16bit.zip)
 - [HHMI-D25-16bit-0.25](https://download.fht.org/jug/msplit/hhmi_d25/hhmi_d25_16bit_binned.zip)
+
+
+## Cite us
+
+Ashesh, Ashesh, et al. "Micro Split: semantic unmixing of fluorescent microscopy data." Nature Methods (2026): 1-11. [DOI:10.1038/s41592-026-03082-1](https://www.nature.com/articles/s41592-026-03082-1)
+
+```
+@article{ashesh2026micro,
+  title={Micro S plit: semantic unmixing of fluorescent microscopy data},
+  author={Ashesh, Ashesh and Carrara, Federico and Zubarev, Igor and Galinova, Vera and Croft, Melisande and Pezzotti, Melissa and Gong, Daozheng and Casagrande, Francesca and Colombo, Elisa and Giussani, Stefania and others},
+  journal={Nature Methods},
+  pages={1--11},
+  year={2026},
+  publisher={Nature Publishing Group US New York}
+}
+```
+
 
 ## License
 
