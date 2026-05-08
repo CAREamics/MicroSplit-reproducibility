@@ -4,6 +4,7 @@ from careamics.lvae_training.eval_utils import get_predictions, get_device
 from careamics.lightning import VAEModule
 from microsplit_reproducibility.datasets import create_train_val_datasets, SplittingDataset
 from microsplit_reproducibility.datasets.HT_LIF24 import get_train_val_data
+from microsplit_reproducibility.utils.utils import cast_model_floats
 
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ def load_pretrained_model(model: VAEModule, ckpt_path):
     device = get_device()
     ckpt_dict = torch.load(ckpt_path, map_location=device, weights_only=True)
     model.load_state_dict(ckpt_dict['state_dict'], strict=False)
+    cast_model_floats(model)
     print(f"Loaded model from {ckpt_path}")
 
 

@@ -14,6 +14,29 @@ def fix_seeds(seed: int = 0) -> None:
     torch.backends.cudnn.deterministic = True
 
 
+def cast_model_floats(
+    model: torch.nn.Module, dtype: torch.dtype = torch.float32
+) -> torch.nn.Module:
+    """
+    Cast every floating parameter and buffer to the requested dtype.
+    """
+    model.to("cpu")
+    model.to(dtype=dtype)
+
+    incompatible_tensors = []
+    for name, tensor in list(model.named_parameters()) + list(model.named_buffers()):
+        if torch.is_floating_point(tensor) and tensor.dtype != dtype:
+            incompatible_tensors.append(f"{name}:{tensor.dtype}")
+
+    if incompatible_tensors:
+        preview = ", ".join(incompatible_tensors[:5])
+        raise TypeError(
+            f"Model still contains floating tensors that are not {dtype}: {preview}"
+        )
+
+    return model
+
+
 def get_ignored_pixels(pred: torch.Tensor) -> int:
     """Get the number of ignored pixels in the predictions.
 
