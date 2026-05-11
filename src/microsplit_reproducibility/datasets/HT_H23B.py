@@ -552,9 +552,10 @@ class MultiChDloaderRef:
 
     def normalize_target(self, target):
         mean_dict, std_dict = self.get_mean_std()
-        mean_ = mean_dict["target"]  # .squeeze(0)
-        std_ = std_dict["target"]  # .squeeze(0)
-        return (target - mean_) / std_
+        mean_ = mean_dict["target"].astype(np.float32)  # .squeeze(0)
+        std_ = std_dict["target"].astype(np.float32)  # .squeeze(0)
+        target = target.astype(np.float32)
+        return ((target - mean_) / std_).astype(np.float32)
 
     def get_grid_size(self):
         return self._grid_sz

@@ -7,6 +7,7 @@ from microsplit_reproducibility.datasets import (
     SplittingDataset,
 )
 from microsplit_reproducibility.datasets.HT_H23B import get_train_val_data
+from microsplit_reproducibility.utils.utils import cast_model_floats
 
 import os
 from pathlib import Path
@@ -25,6 +26,7 @@ def load_pretrained_model(model: VAEModule, ckpt_path):
         raise ValueError(
             "Checkpoint path must start with 'checkpoints' or 'pretrained_checkpoints'."
         )
+    cast_model_floats(model)
     print(f"Loaded model from {ckpt_path}")
 
 
