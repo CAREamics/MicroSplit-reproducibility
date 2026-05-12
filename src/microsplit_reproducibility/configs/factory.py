@@ -1,17 +1,21 @@
 from typing import Literal, Optional
 
+import torch
 from careamics.config import VAEBasedAlgorithm
 from careamics.config.architectures import LVAEModel
-from careamics.config.loss_model import LVAELossConfig, KLLossConfig
+from careamics.config.likelihood_model import (
+    GaussianLikelihoodConfig,
+    NMLikelihoodConfig,
+)
+from careamics.config.loss_model import KLLossConfig, LVAELossConfig
 from careamics.config.nm_model import GaussianMixtureNMConfig, MultiChannelNMConfig
-from careamics.config.likelihood_model import GaussianLikelihoodConfig, NMLikelihoodConfig
+from careamics.config.optimizer_models import LrSchedulerModel, OptimizerModel
 from careamics.config.training_model import TrainingConfig
-from careamics.config.optimizer_models import OptimizerModel, LrSchedulerModel
 
 
 def get_model_config(**kwargs) -> LVAEModel:
     """Get the model configuration for the MicroSplit model.
-    
+
     Parameters
     ----------
     ...
@@ -32,17 +36,17 @@ def get_model_config(**kwargs) -> LVAEModel:
         predict_logvar=kwargs["predict_logvar"],
         analytical_kl=False,
     )
-    
+
 
 def get_likelihood_config(
     **kwargs,
 ) -> tuple[GaussianLikelihoodConfig, MultiChannelNMConfig, NMLikelihoodConfig]:
     """Get the likelihood configuration for split models.
-    
+
     Parameters
     ----------
     ...
-    
+
     Returns
     -------
     tuple[GaussianLikelihoodConfig, MultiChannelNMConfig, NMLikelihoodConfig]
@@ -80,11 +84,11 @@ def get_likelihood_config(
 
 def get_loss_config(**kwargs) -> LVAELossConfig:
     """Get the loss configuration for the split model.
-    
+
     Parameters
     ----------
     ...
-    
+
     Returns
     -------
     LVAELossConfig
@@ -96,23 +100,32 @@ def get_loss_config(**kwargs) -> LVAELossConfig:
             loss_type=kwargs["kl_type"],
         ),
     )
-    
+
 
 def get_training_config(**kwargs) -> TrainingConfig:
     """Get the training configuration.
-    
+
     Parameters
     ----------
     ...
-    
+
     Returns
     -------
     TrainingConfig
         The training configuration.
     """
+    # AMP on non-CUDA backends can emit CUDA autocast warnings (e.g. on MPS),
+    # so default to mixed precision only when CUDA is available.
+    if kwargs.get("precision") is not None:
+        precision = kwargs["precision"]
+    elif torch.cuda.is_available():
+        precision = "16-mixed"
+    else:
+        precision = "32"
+
     return TrainingConfig(
         num_epochs=kwargs["num_epochs"],
-        precision="16-mixed",
+        precision=precision,
         logger="wandb",
         gradient_clip_algorithm="value",
         grad_clip_norm_value=0.5,
@@ -132,7 +145,7 @@ def get_lr_scheduler_config(**kwargs) -> LrSchedulerModel:
             "min_lr": 1e-12,
         },
     )
-    
+
 
 def get_optimizer_config(**kwargs) -> OptimizerModel:
     return OptimizerModel(
@@ -142,6 +155,7 @@ def get_optimizer_config(**kwargs) -> OptimizerModel:
             "weight_decay": 0,
         },
     )
+
 
 # TODO: Some of these are typed as optional but VAEBasedAlgorithm does not agree...
 def create_algorithm_config(
@@ -155,7 +169,7 @@ def create_algorithm_config(
     lr_scheduler_config: Optional[LrSchedulerModel] = None,
 ) -> VAEBasedAlgorithm:
     """Instantiate the split algorithm config.
-    
+
     Parameters
     ----------
     algorithm : Literal["muspit", "denoisplit"]
@@ -183,7 +197,7 @@ def create_algorithm_config(
     # TODO: VAEBasedAlgorithm in CAREamics needs to be updated so that
     #   - optimizer can be None
     #   - lr_schedular can be None
-    
+
     # this is so that we fall back on the defaults set in VAEBasedAlgorithm if any
     # of the optional params are passed as none
     vae_algorithm_params = {
@@ -196,14 +210,12 @@ def create_algorithm_config(
         "noise_model": nm_config,
         "noise_model_likelihood": nm_lik_config,
         "optimizer": optimizer_config,
-        "lr_scheduler": lr_scheduler_config
+        "lr_scheduler": lr_scheduler_config,
     }
     for key, value in optional_params.items():
-        # values which are None do not get added, 
+        # values which are None do not get added,
         # now defaults in VAEBasedAlgorithm will be used
         if value is not None:
             vae_algorithm_params[key] = value
-    
-    return VAEBasedAlgorithm(
-        **vae_algorithm_params
-    )
+
+    return VAEBasedAlgorithm(**vae_algorithm_params)
