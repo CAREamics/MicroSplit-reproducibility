@@ -237,18 +237,17 @@ def predict_fov(
     H, W = next(iter(channel_images.values())).shape
     num_channels = len(channel_names)
 
-    # Stack and clip channels
+    # Combined input = average of the raw channels, then clipped at the training
+    # maximum, in the same order as training (combine_channels, then LazyLCDataset).
+    # max_val is a single value (true maximum, as in CAREamics); older stats files
+    # hold one value per channel with the combined channel last.
     channel_stack = np.stack(
         [channel_images[ch].astype(np.float32) for ch in channel_names], axis=-1
     )  # (H, W, C)
-    for ch_idx in range(num_channels):
-        channel_stack[..., ch_idx] = np.minimum(
-            channel_stack[..., ch_idx], max_val[ch_idx]
-        )
-
-    # Combined input = average of channels (matches combine_channels default in training)
+    max_val = np.asarray(max_val, dtype=np.float32)
+    input_cap = float(max_val) if max_val.ndim == 0 else float(max_val.reshape(-1)[-1])
     combined = channel_stack.mean(axis=-1).astype(np.float32)
-    combined  = np.minimum(combined, max_val[-1])
+    combined = np.minimum(combined, input_cap)
 
     ms_frames  = build_multiscale_frames(combined, multiscale_lowres_count)
     h_positions, w_positions = generate_tile_positions(H, W, image_size, grid_size)

@@ -59,7 +59,8 @@ class LazyLCDataset:
     enable_rotation : bool
         If True, apply random flips and 90-degree rotations.
     max_val : float or list[float] or None
-        Upper clip value per channel. If None, computed from data.
+        Upper clip value (one value, or one per channel). If None, the true
+        maximum of the training frames is computed in ``compute_mean_std``.
     cache_size : int
         Number of frames to keep in the LRU cache.
     tiling_mode : TilingMode
@@ -138,24 +139,23 @@ class LazyLCDataset:
         Uses Welford-like accumulation: tracks running sum and sum-of-squares
         per channel, requiring only O(C) memory regardless of dataset size.
 
-        For max_val, samples a subset of frames to compute the 99.9th percentile.
+        max_val is the true maximum over all channels and all frames, as in
+        CAREamics ``MultiChDloader`` (``_quantile = 1.0``,
+        ``_channelwise_quantile = False``). Clipping at it leaves every
+        training pixel unchanged.
 
         Returns
         -------
         mean : ndarray, shape (C,)
         std : ndarray, shape (C,)
-        max_val : list[float], length C
+        max_val : float
         """
         n_pixels = 0
         running_sum = np.zeros(self.num_channels, dtype=np.float64)
         running_sum_sq = np.zeros(self.num_channels, dtype=np.float64)
+        max_val = -np.inf
 
-        # For max_val: sample up to 200 frames for quantile estimation
-        max_val_sample_count = min(200, len(self.frame_indices))
-        sample_step = max(1, len(self.frame_indices) // max_val_sample_count)
-        sampled_maxes = [[] for _ in range(self.num_channels)]
-
-        for i, frame_idx in enumerate(self.frame_indices):
+        for frame_idx in self.frame_indices:
             frame = self._read_frame_raw(frame_idx)  # (H, W, C)
             frame_f = frame.astype(np.float64)
 
@@ -165,21 +165,13 @@ class LazyLCDataset:
                 running_sum_sq[ch] += (ch_data ** 2).sum()
 
             n_pixels += self.frame_h * self.frame_w
-
-            # Sample for max_val quantile
-            if i % sample_step == 0:
-                for ch in range(self.num_channels):
-                    # Use the 99.9th percentile of this frame as a sample
-                    sampled_maxes[ch].append(np.percentile(frame[..., ch], 99.9))
+            max_val = max(max_val, float(frame.max()))
 
         mean = running_sum / n_pixels
         variance = running_sum_sq / n_pixels - mean ** 2
         # Clamp variance to avoid sqrt of tiny negatives from floating point
         variance = np.maximum(variance, 0.0)
         std = np.sqrt(variance)
-
-        # max_val: median of per-frame 99.9th percentiles per channel
-        max_val = [float(np.median(sampled_maxes[ch])) for ch in range(self.num_channels)]
 
         return mean.astype(np.float32), std.astype(np.float32), max_val
 
